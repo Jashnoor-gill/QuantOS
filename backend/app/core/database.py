@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, session
+from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
-from contextlib import contextmanager
 
 # Create database engine
 engine = create_engine(
@@ -18,10 +17,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Base model
 Base = declarative_base()
 
-@contextmanager
+# FastAPI dependency: yields a real SQLAlchemy Session
 def get_db():
+    db = SessionLocal()
     try:
-        db = SessionLocal()
         yield db
     finally:
         db.close()
@@ -29,4 +28,5 @@ def get_db():
 # Initialize database
 def init_db():
     Base.metadata.create_all(bind=engine)
+
 
