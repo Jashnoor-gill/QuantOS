@@ -29,3 +29,4 @@ def get_db():
 # Initialize database
 def init_db():
     Base.metadata.create_all(bind=engine)
+
