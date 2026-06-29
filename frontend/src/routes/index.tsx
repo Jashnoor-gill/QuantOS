@@ -7,6 +7,9 @@ import { StrategiesPage } from '../pages/StrategiesPage';
 import { BacktestsPage } from '../pages/BacktestsPage';
 import { PortfolioPage } from '../pages/PortfolioPage';
 import { RiskPage } from '../pages/RiskPage';
+import { AnalyticsPage } from '../pages/AnalyticsPage';
+import { AlphaLabPage } from '../pages/AlphaLabPage';
+import { ReportsPage } from '../pages/ReportsPage';
 
 
 export const IndexRoutes: Array<{ path: string; element: React.ReactNode }> = [
@@ -18,5 +21,9 @@ export const IndexRoutes: Array<{ path: string; element: React.ReactNode }> = [
   { path: '/backtests', element: <BacktestsPage /> },
   { path: '/portfolio', element: <PortfolioPage /> },
   { path: '/risk', element: <RiskPage /> },
+  { path: '/analytics', element: <AnalyticsPage /> },
+  { path: '/alpha-lab', element: <AlphaLabPage /> },
+  { path: '/reports', element: <ReportsPage /> },
 ];
+
 

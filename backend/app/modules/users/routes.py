@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user, create_access_token, create_refresh_token
 from app.modules.users.schemas import (
     UserCreate,
     UserLogin,
@@ -12,6 +13,7 @@ from app.modules.users.services import (
     create_user,
     get_user_by_email,
 )
+
 
 router = APIRouter()
 
@@ -25,10 +27,13 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered",
         )
 
-    # Replace with real password hashing later
-    hashed_password = user.password
+    from passlib.context import CryptContext
+
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    hashed_password = pwd_context.hash(user.password)
 
     return create_user(db, user, hashed_password)
+
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -41,15 +46,33 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid credentials",
         )
 
-    # Replace with JWT generation later
+    from passlib.context import CryptContext
+    from app.core.security import create_access_token, create_refresh_token
+    from datetime import timedelta
+
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+    if not pwd_context.verify(user.password, existing.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+        )
+
+    # JWT access + refresh tokens
+    access_token = create_access_token({"sub": existing.username})
+    refresh_token = create_refresh_token({"sub": existing.username})
+
     return {
-        "access_token": "development-token",
+        "access_token": access_token,
         "token_type": "bearer",
+        "refresh_token": refresh_token,
     }
+
 
 
 @router.get("/me")
-def me():
+def me(current_user: str = Depends(get_current_user)):
     return {
-        "message": "Authenticated user endpoint"
+        "message": "Authenticated user endpoint",
+        "user": current_user,
     }
+

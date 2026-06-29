@@ -12,6 +12,14 @@ from app.modules.stat_arb_engine.routes import router as stat_arb_engine_router
 from app.modules.reporting.routes import router as reporting_router
 from app.modules.ai_assistant.routes import router as ai_assistant_router
 from app.modules.market_data.routes import router as market_data_router
+from app.modules.analytics.routes import router as analytics_router
+
+
+
+
+
+
+
 
 
 
@@ -121,6 +129,34 @@ router.include_router(
     prefix="/market-data",
     tags=["Market Data"],
 )
+
+# Analytics Routes
+router.include_router(
+    analytics_router,
+    prefix="/analytics",
+    tags=["Analytics"],
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+
 from app.modules.ai_assistant.schemas import (
     AIConversationCreate,
     AIConversationListResponse,
@@ -40,14 +42,17 @@ def list(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     items = list_ai_conversations(db, user_id=user_id, status=status, skip=skip, limit=limit)
     return AIConversationListResponse(items=items)
 
 
 @router.get("/ai-conversations/{conversation_id}", response_model=AIConversationResponse)
-def get(conversation_id: int, db: Session = Depends(get_db)):
+def get(conversation_id: int, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
+
     obj = get_ai_conversation(db, conversation_id)
+
     if obj is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
     return obj
@@ -58,6 +63,7 @@ def update(
     conversation_id: int,
     payload: AIConversationUpdate,
     db: Session = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     obj = update_ai_conversation(db, conversation_id, payload)
     if obj is None:

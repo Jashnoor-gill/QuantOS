@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.security import get_current_user
+
 from app.modules.volatility_lab.schemas import (
     VolatilityForecastCreate,
     VolatilityForecastListResponse,
@@ -45,11 +47,13 @@ def list(
 
 
 @router.get("/volatility-forecasts/{forecast_id}", response_model=VolatilityForecastResponse)
-def get(forecast_id: int, db: Session = Depends(get_db)):
+def get(forecast_id: int, db: Session = Depends(get_db), current_user: str = Depends(get_current_user)):
     obj = get_volatility_forecast(db, forecast_id)
     if obj is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Volatility forecast not found")
     return obj
+
+
 
 
 @router.put("/volatility-forecasts/{forecast_id}", response_model=VolatilityForecastResponse)

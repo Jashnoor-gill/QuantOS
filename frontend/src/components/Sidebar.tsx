@@ -10,7 +10,11 @@ const items: Array<{ to: string; label: string }> = [
   { to: '/backtests', label: 'Backtests' },
   { to: '/portfolio', label: 'Portfolio' },
   { to: '/risk', label: 'Risk' },
+  { to: '/analytics', label: 'Analytics' },
+  { to: '/alpha-lab', label: 'Alpha Lab' },
+  { to: '/reports', label: 'Reports' },
 ];
+
 
 export function Sidebar() {
   return (
