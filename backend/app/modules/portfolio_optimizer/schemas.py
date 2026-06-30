@@ -57,3 +57,31 @@ class PortfolioListResponse(BaseModel):
 
     items: list[PortfolioResponse]
 
+
+class AssetReturns(BaseModel):
+    asset_id: str
+    returns: list[float]
+
+
+class OptimizeRequest(BaseModel):
+    returns: list[AssetReturns]
+    target_return: Optional[float] = None
+    risk_aversion: Optional[float] = None
+
+
+class OptimizeResponse(BaseModel):
+    weights: dict[str, float]
+    expected_return: float
+    volatility: float
+    sharpe_ratio: float
+
+
+class EfficientFrontierPoint(BaseModel):
+    return_val: float
+    volatility: float
+    sharpe_ratio: float
+
+
+class EfficientFrontierResponse(BaseModel):
+    points: list[EfficientFrontierPoint]
+

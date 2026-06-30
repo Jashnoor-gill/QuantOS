@@ -25,15 +25,35 @@ from app.modules.market_data.services import (
     list_price_bars,
     update_asset,
     update_price_bar,
+    ingest_historical_data_service,
+    ingest_all_assets_service,
+    get_historical_data_service,
 )
 
 router = APIRouter()
 
 
+@router.post("/ingest/{symbol}")
+def ingest_data_route(symbol: str, db: Session = Depends(get_db)):
+    return ingest_historical_data_service(db, symbol)
+
+@router.post("/ingest-all")
+def ingest_all_data_route(db: Session = Depends(get_db)):
+    return ingest_all_assets_service(db)
+
+@router.get("/history/{symbol}", response_model=PriceBarListResponse)
+def get_history_route(symbol: str, db: Session = Depends(get_db)):
+    items = get_historical_data_service(db, symbol)
+    if items is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
+    return PriceBarListResponse(items=items)
+
+
 # Asset CRUD
 @router.post("/assets", response_model=AssetResponse, status_code=status.HTTP_201_CREATED)
 def create_asset_route(payload: AssetCreate, db: Session = Depends(get_db)):
-    return create_asset(db, payload)
+    return create_asset(db, payload.model_dump())
+
 
 
 @router.get("/assets", response_model=AssetListResponse)

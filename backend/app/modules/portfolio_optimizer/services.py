@@ -82,3 +82,58 @@ def delete_portfolio(db: Session, portfolio_id: int) -> bool:
     db.commit()
     return True
 
+
+import pandas as pd
+from app.modules.portfolio_optimizer.optimizer import (
+    mean_variance_optimization,
+    minimum_variance_portfolio,
+    risk_parity_portfolio,
+    efficient_frontier,
+)
+from app.modules.portfolio_optimizer.schemas import (
+    OptimizeRequest,
+    EfficientFrontierResponse,
+    EfficientFrontierPoint,
+)
+
+
+def _prepare_returns_df(payload: OptimizeRequest) -> pd.DataFrame:
+    returns_dict = {item.asset_id: item.returns for item in payload.returns}
+    return pd.DataFrame(returns_dict)
+
+
+def run_mean_variance_optimization(payload: OptimizeRequest):
+    returns_df = _prepare_returns_df(payload)
+    result = mean_variance_optimization(
+        returns_df,
+        target_return=payload.target_return or 0.10,
+        risk_aversion=payload.risk_aversion or 0.5,
+    )
+    return result
+
+
+def run_minimum_variance_portfolio(payload: OptimizeRequest):
+    returns_df = _prepare_returns_df(payload)
+    result = minimum_variance_portfolio(returns_df)
+    return result
+
+
+def run_risk_parity_portfolio(payload: OptimizeRequest):
+    returns_df = _prepare_returns_df(payload)
+    result = risk_parity_portfolio(returns_df)
+    return result
+
+
+def run_efficient_frontier(payload: OptimizeRequest):
+    returns_df = _prepare_returns_df(payload)
+    frontier_df = efficient_frontier(returns_df)
+    points = [
+        EfficientFrontierPoint(
+            return_val=row["return"],
+            volatility=row["volatility"],
+            sharpe_ratio=row["sharpe_ratio"],
+        )
+        for _, row in frontier_df.iterrows()
+    ]
+    return EfficientFrontierResponse(points=points)
+

@@ -12,6 +12,9 @@ from app.modules.portfolio_optimizer.schemas import (
     PortfolioListResponse,
     PortfolioResponse,
     PortfolioUpdate,
+    OptimizeRequest,
+    OptimizeResponse,
+    EfficientFrontierResponse,
 )
 from app.modules.portfolio_optimizer.services import (
     create_portfolio,
@@ -19,9 +22,57 @@ from app.modules.portfolio_optimizer.services import (
     get_portfolio,
     list_portfolios,
     update_portfolio,
+    run_mean_variance_optimization,
+    run_minimum_variance_portfolio,
+    run_risk_parity_portfolio,
+    run_efficient_frontier,
 )
 
 router = APIRouter()
+
+
+@router.post(
+    "/optimize/mean-variance",
+    response_model=OptimizeResponse,
+)
+def optimize_mean_variance(payload: OptimizeRequest, current_user: str = Depends(get_current_user)):
+    try:
+        return run_mean_variance_optimization(payload)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/optimize/min-variance",
+    response_model=OptimizeResponse,
+)
+def optimize_min_variance(payload: OptimizeRequest, current_user: str = Depends(get_current_user)):
+    try:
+        return run_minimum_variance_portfolio(payload)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/optimize/risk-parity",
+    response_model=OptimizeResponse,
+)
+def optimize_risk_parity(payload: OptimizeRequest, current_user: str = Depends(get_current_user)):
+    try:
+        return run_risk_parity_portfolio(payload)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.post(
+    "/efficient-frontier",
+    response_model=EfficientFrontierResponse,
+)
+def get_efficient_frontier(payload: OptimizeRequest, current_user: str = Depends(get_current_user)):
+    try:
+        return run_efficient_frontier(payload)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post(

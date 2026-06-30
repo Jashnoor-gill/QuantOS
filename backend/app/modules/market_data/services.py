@@ -14,18 +14,30 @@ def list_assets(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Asset).offset(skip).limit(limit).all()
 
 
-def create_asset(db: Session, payload: AssetCreate) -> Asset:
+def create_asset(db: Session, payload: dict) -> Asset:
     db_obj = Asset(
-        symbol=payload.symbol,
-        name=payload.name,
-        asset_type=payload.asset_type,
-        exchange=payload.exchange,
+        symbol=payload.get("symbol"),
+        name=payload.get("name"),
+        asset_type=payload.get("asset_type"),
+        exchange=payload.get("exchange"),
     )
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
+from app.modules.market_data.ingestion_service import ingest_historical_data, get_symbol_history
 
+def ingest_historical_data_service(db: Session, symbol: str):
+    return ingest_historical_data(db, symbol)
+
+def ingest_all_assets_service(db: Session):
+    assets = list_assets(db)
+    for asset in assets:
+        ingest_historical_data(db, asset.symbol)
+    return {"message": "Successfully ingested data for all assets"}
+
+def get_historical_data_service(db: Session, symbol: str):
+    return get_symbol_history(db, symbol)
 
 def update_asset(db: Session, asset_id: int, payload: AssetUpdate) -> Optional[Asset]:
     obj = get_asset(db, asset_id)
