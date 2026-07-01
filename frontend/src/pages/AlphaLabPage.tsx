@@ -1,173 +1,189 @@
-import React, { useMemo, useState } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
+import React, { useEffect, useState } from 'react';
+import { getAlphas, createAlpha, AlphaResponse, AlphaCreate } from '../services/alphaEngineApi';
+import { LoadingState } from '../components/LoadingState';
+import { ErrorState } from '../components/ErrorState';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { RefreshCw } from 'lucide-react';
 
-type Metrics = {
-  sharpe: number;
-  sortino: number;
-  maxDrawdown: number;
-  winRate: number;
-};
 
-type Point = { label: string; value: number };
-
-type DrawdownPoint = { label: string; dd: number };
-
-// TODO: Replace editor + run logic with backend alpha evaluation once endpoints exist.
 export function AlphaLabPage() {
-  const [alphaText, setAlphaText] = useState(
-    `# Example Alpha (mock)\n\nalpha = rank(close) - rank(open)\n# Replace with your DSL / expression\n`
-  );
-  const [running, setRunning] = useState(false);
-  const [lastRunAt, setLastRunAt] = useState<string | null>(null);
+  const [alphas, setAlphas] = useState<AlphaResponse[]>([]);
+  const [selectedAlpha, setSelectedAlpha] = useState<AlphaResponse | null>(null);
+  const [alphaText, setAlphaText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const mockResult = useMemo(() => {
-    const equity: Point[] = [
-      { label: 'W1', value: 100 },
-      { label: 'W2', value: 108 },
-      { label: 'W3', value: 105 },
-      { label: 'W4', value: 113 },
-      { label: 'W5', value: 122 },
-      { label: 'W6', value: 118 },
-      { label: 'W7', value: 127 },
-      { label: 'W8', value: 134 },
-      { label: 'W9', value: 129 },
-      { label: 'W10', value: 141 },
-      { label: 'W11', value: 149 },
-      { label: 'W12', value: 156 },
-    ];
-
-    const dd: DrawdownPoint[] = [
-      { label: 'W1', dd: 0.0 },
-      { label: 'W2', dd: -0.01 },
-      { label: 'W3', dd: -0.04 },
-      { label: 'W4', dd: -0.02 },
-      { label: 'W5', dd: -0.01 },
-      { label: 'W6', dd: -0.03 },
-      { label: 'W7', dd: -0.02 },
-      { label: 'W8', dd: -0.01 },
-      { label: 'W9', dd: -0.05 },
-      { label: 'W10', dd: -0.02 },
-      { label: 'W11', dd: -0.01 },
-      { label: 'W12', dd: -0.015 },
-    ];
-
-    const metrics: Metrics = {
-      sharpe: 1.68,
-      sortino: 2.44,
-      maxDrawdown: -0.05,
-      winRate: 0.59,
-    };
-
-    return { equity, dd, metrics };
-  }, []);
-
-  const handleRun = async () => {
-    setRunning(true);
-
-    // Mock delay to simulate async backend evaluation.
-    await new Promise((r) => setTimeout(r, 700));
-
-    setLastRunAt(new Date().toLocaleString());
-    setRunning(false);
+  const fetchAlphas = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await getAlphas();
+      setAlphas(response.items);
+      if (response.items.length > 0 && !selectedAlpha) {
+        setSelectedAlpha(response.items[0]);
+        setAlphaText(response.items[0].expression);
+      }
+    } catch (err) {
+      setError('Failed to fetch alphas. Please try again later.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const metrics = mockResult.metrics;
+  useEffect(() => {
+    fetchAlphas();
+  }, []);
+
+  const handleCreateAlpha = async () => {
+    setIsCreating(true);
+    setError(null);
+    try {
+      const newAlpha: AlphaCreate = {
+        name: `New Alpha ${new Date().toISOString()}`,
+        description: 'A new alpha created from the lab',
+        expression: alphaText,
+        status: 'pending',
+      };
+      await createAlpha(newAlpha);
+      await fetchAlphas();
+    } catch (err) {
+      setError('Failed to create alpha.');
+      console.error(err);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleSelectAlpha = (alpha: AlphaResponse) => {
+    setSelectedAlpha(alpha);
+    setAlphaText(alpha.expression);
+  };
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Alpha Lab</h1>
-          <p className="mt-2 text-slate-300">Edit an alpha, run it, and inspect mock results.</p>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold">Alpha Lab</h1>
+        <Button onClick={fetchAlphas} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Alpha List */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Alphas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {alphas.length === 0 ? (
+                <p className="text-sm text-slate-500">No alphas found.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {alphas.map((alpha) => (
+                    <li key={alpha.id}>
+                      <button
+                        onClick={() => handleSelectAlpha(alpha)}
+                        className={`w-full text-left p-2 rounded-md ${selectedAlpha?.id === alpha.id ? 'bg-slate-700' : 'hover:bg-slate-800'}`}
+                      >
+                        {alpha.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
         </div>
-        <div className="text-xs text-slate-400">
-          {lastRunAt ? <div>Last run: {lastRunAt}</div> : <div>Not run yet</div>}
+
+        {/* Alpha Editor and Metrics */}
+        <div className="lg:col-span-3 grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Alpha Editor</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <textarea
+                  value={alphaText}
+                  onChange={(e) => setAlphaText(e.target.value)}
+                  className="h-72 w-full resize-none rounded border border-slate-800 bg-slate-950/40 p-3 font-mono text-sm text-slate-100 outline-none"
+                  spellCheck={false}
+                />
+                <Button onClick={handleCreateAlpha} disabled={isCreating} className="mt-4">
+                  {isCreating ? 'Creating...' : 'Create New Alpha from Editor'}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Metrics</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {selectedAlpha ? (
+                  <>
+                    <div>
+                      <p className="text-sm text-slate-400">Sharpe Ratio</p>
+                      <p className="text-lg font-semibold">{selectedAlpha.sharpe?.toFixed(4) ?? 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">Turnover</p>
+                      <p className="text-lg font-semibold">{selectedAlpha.turnover?.toFixed(4) ?? 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">Fitness</p>
+                      <p className="text-lg font-semibold">{selectedAlpha.fitness?.toFixed(4) ?? 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-400">Status</p>
+                      <p className="text-lg font-semibold">{selectedAlpha.status}</p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-slate-500">Select an alpha to view metrics.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <div className="rounded border border-slate-800 bg-slate-900/30 p-4 xl:col-span-2">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div className="text-sm text-slate-300">Alpha Editor (Monaco placeholder)</div>
-            <button
-              onClick={handleRun}
-              disabled={running}
-              className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium hover:bg-indigo-500 disabled:opacity-60"
-            >
-              {running ? 'Running…' : 'Run Alpha'}
-            </button>
-          </div>
-
-          {/*
-            TODO: Replace textarea with Monaco editor when monaco-editor is installed.
-          */}
-          <textarea
-            value={alphaText}
-            onChange={(e) => setAlphaText(e.target.value)}
-            className="h-72 w-full resize-none rounded border border-slate-800 bg-slate-950/40 p-3 font-mono text-sm text-slate-100 outline-none"
-            spellCheck={false}
-          />
-
-          <div className="mt-2 text-xs text-slate-400">
-            TODO: submit alpha to backend endpoint and load equity/drawdown results.
-          </div>
-        </div>
-
-        <div className="rounded border border-slate-800 bg-slate-900/30 p-4">
-          <div className="mb-3 text-sm text-slate-300">Metrics Panel</div>
-
-          <div className="grid grid-cols-1 gap-3">
-            <div className="rounded border border-slate-800 bg-slate-900/30 p-3">
-              <div className="text-xs text-slate-400">Sharpe Ratio</div>
-              <div className="mt-1 text-lg font-semibold">{metrics.sharpe.toFixed(2)}</div>
-            </div>
-            <div className="rounded border border-slate-800 bg-slate-900/30 p-3">
-              <div className="text-xs text-slate-400">Sortino Ratio</div>
-              <div className="mt-1 text-lg font-semibold">{metrics.sortino.toFixed(2)}</div>
-            </div>
-            <div className="rounded border border-slate-800 bg-slate-900/30 p-3">
-              <div className="text-xs text-slate-400">Max Drawdown</div>
-              <div className="mt-1 text-lg font-semibold">{(metrics.maxDrawdown * 100).toFixed(2)}%</div>
-            </div>
-            <div className="rounded border border-slate-800 bg-slate-900/30 p-3">
-              <div className="text-xs text-slate-400">Win Rate</div>
-              <div className="mt-1 text-lg font-semibold">{(metrics.winRate * 100).toFixed(1)}%</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <div className="rounded border border-slate-800 bg-slate-900/30 p-4">
-          <div className="mb-2 text-sm text-slate-300">Equity Curve (mock)</div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockResult.equity} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fill: '#cbd5e1', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#cbd5e1' }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="value" stroke="#22c55e" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="rounded border border-slate-800 bg-slate-900/30 p-4">
-          <div className="mb-2 text-sm text-slate-300">Drawdown (mock)</div>
-          <div className="h-80 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockResult.dd} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" tick={{ fill: '#cbd5e1', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#cbd5e1' }} tickFormatter={(v) => `${(Number(v) * 100).toFixed(0)}%`} />
-                <Tooltip formatter={(v: any) => `${(Number(v) * 100).toFixed(2)}%`} />
-                <Area type="monotone" dataKey="dd" stroke="#f97316" fill="rgba(249,115,22,0.18)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </section>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Equity Curve</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-500">
+              No time-series equity curve data is available from the backend alpha_engine API.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Drawdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-slate-500">
+              No time-series drawdown data is available from the backend alpha_engine API.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
