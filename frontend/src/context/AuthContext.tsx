@@ -36,14 +36,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (credentials: LoginRequest) => {
     const response = await apiLogin(credentials);
+
+    console.log("LOGIN RESPONSE:", response);
+
     const { access_token } = response;
-    localStorage.setItem('token', access_token);
+
+    console.log("TOKEN RECEIVED:", access_token);
+
+    localStorage.setItem("token", access_token);
+
+    console.log(
+      "TOKEN STORED:",
+      localStorage.getItem("token")
+    );
+
     setToken(access_token);
-    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+
+    api.defaults.headers.common["Authorization"] =
+      `Bearer ${access_token}`;
+
     const meResponse = await getMe();
+
+    console.log("ME RESPONSE:", meResponse);
+
     setUser(meResponse.user);
   };
-
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);

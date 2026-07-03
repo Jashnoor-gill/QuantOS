@@ -1,33 +1,29 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+
 import { Layout } from './components/Layout';
-import { IndexRoutes } from './routes';
 import { LoginPage } from './pages/LoginPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { IndexRoutes } from './routes';
 
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<ProtectedRoute />}>
-        <Route
-          path="/"
-          element={
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                {IndexRoutes.map((r) => (
-                  <Route key={r.path} path={r.path} element={r.element} />
-                ))}
-                <Route path="*" element={<div className="p-6">Not Found</div>} />
-              </Routes>
-            </Layout>
-          }
-        />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<Layout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+
+          {IndexRoutes.map((r) => (
+            <Route
+              key={r.path}
+              path={r.path.replace('/', '')}
+              element={r.element}
+            />
+          ))}
+        </Route>
       </Route>
     </Routes>
   );
 }
-
-
-
