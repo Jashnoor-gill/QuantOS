@@ -1,47 +1,47 @@
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
+# --- Request Schemas ---
 
-class AlphaCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    expression: str
-    status: str
-    sharpe: Optional[float] = None
-    turnover: Optional[float] = None
-    fitness: Optional[float] = None
+class GenerateAlphaSignalRequest(BaseModel):
+    symbols: Optional[List[str]] = Field(None, description="List of asset symbols to generate signals for. If empty, runs for all assets.")
+    start_date: date = Field(..., description="Start date for signal calculation.")
+    end_date: date = Field(..., description="End date for signal calculation.")
 
+# --- Response Schemas ---
 
-class AlphaUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    expression: Optional[str] = None
-    status: Optional[str] = None
-    sharpe: Optional[float] = None
-    turnover: Optional[float] = None
-    fitness: Optional[float] = None
+class GenerateAlphaSignalResponse(BaseModel):
+    message: str
+    signals_generated: int
 
+class AlphaSignalBase(BaseModel):
+    asset_id: int
+    date: date
+    alpha_momentum: Optional[float] = None
+    alpha_trend: Optional[float] = None
+    alpha_risk_adjusted: Optional[float] = None
+    alpha_composite: Optional[float] = None
 
-class AlphaResponse(BaseModel):
+class AlphaSignalCreate(AlphaSignalBase):
+    pass
+
+class AssetResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-
     id: int
-    name: str
-    description: Optional[str]
-    expression: str
-    status: str
+    symbol: str
+    name: Optional[str] = None
 
-    sharpe: Optional[float]
-    turnover: Optional[float]
-    fitness: Optional[float]
-
-    created_at: datetime
-
-
-class AlphaListResponse(BaseModel):
+class AlphaSignalResponse(AlphaSignalBase):
     model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    asset: AssetResponse
+    created_at: datetime
+    updated_at: datetime
 
-    items: list[AlphaResponse]
+AlphaSignalResponse.model_rebuild()
 
+class AlphaSignalListResponse(BaseModel):
+    items: List[AlphaSignalResponse]

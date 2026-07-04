@@ -31,6 +31,12 @@ class Asset(TimestampMixin, Base):
         cascade="all, delete-orphan",
     )
 
+    alpha_signals = relationship(
+        "AlphaSignal",
+        back_populates="asset",
+        cascade="all, delete-orphan",
+    )
+
 
 class PriceBar(TimestampMixin, Base):
     __tablename__ = "price_bars"

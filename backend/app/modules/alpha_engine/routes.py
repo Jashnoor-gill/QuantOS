@@ -1,73 +1,71 @@
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import List, Optional
+from datetime import date
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.modules.alpha_engine import services
 from app.modules.alpha_engine.schemas import (
-    AlphaCreate,
-    AlphaListResponse,
-    AlphaResponse,
-    AlphaUpdate,
+    GenerateAlphaSignalRequest,
+    GenerateAlphaSignalResponse,
+    AlphaSignalListResponse
 )
-from app.modules.alpha_engine.services import (
-    create_alpha,
-    delete_alpha,
-    get_alpha,
-    list_alphas,
-    update_alpha,
-)
+from ..market_data.services import get_assets_by_symbols
 
 router = APIRouter()
 
-
 @router.post(
-    "/alphas",
-    response_model=AlphaResponse,
+    "/generate",
+    response_model=GenerateAlphaSignalResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Generate Alpha Signals",
 )
-def create(payload: AlphaCreate, db: Session = Depends(get_db)):
-    return create_alpha(db, payload)
+def generate_signals(
+    payload: GenerateAlphaSignalRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Generate alpha signals (Momentum, Trend, Risk-Adjusted, Composite) for a given set of symbols and date range.
+    This requires factor exposures to be pre-calculated.
+    """
+    count = services.generate_alpha_signals(db, payload)
+    return {"message": "Alpha signals generated successfully.", "signals_generated": count}
 
 
 @router.get(
-    "/alphas",
-    response_model=AlphaListResponse,
+    "/signals",
+    response_model=AlphaSignalListResponse,
+    summary="Get Alpha Signals",
 )
-def list(
-    status: Optional[str] = None,
+def get_signals(
+    symbols: Optional[List[str]] = Query(None, description="List of symbols to filter by."),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 1000,
     db: Session = Depends(get_db),
 ):
-    items = list_alphas(db, status=status, skip=skip, limit=limit)
-    return AlphaListResponse(items=items)
+    """
+    Retrieve stored alpha signals with filtering options.
+    """
+    asset_ids = None
+    if symbols:
+        assets = get_assets_by_symbols(db, symbols)
+        if len(assets) != len(symbols):
+            found_symbols = {asset.symbol for asset in assets}
+            missing_symbols = set(symbols) - found_symbols
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Assets not found for symbols: {', '.join(missing_symbols)}",
+            )
+        asset_ids = [asset.id for asset in assets]
 
-
-@router.get("/alphas/{alpha_id}", response_model=AlphaResponse)
-def get(alpha_id: int, db: Session = Depends(get_db)):
-    obj = get_alpha(db, alpha_id)
-    if obj is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alpha not found")
-    return obj
-
-
-@router.put("/alphas/{alpha_id}", response_model=AlphaResponse)
-def update(
-    alpha_id: int,
-    payload: AlphaUpdate,
-    db: Session = Depends(get_db),
-):
-    obj = update_alpha(db, alpha_id, payload)
-    if obj is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alpha not found")
-    return obj
-
-
-@router.delete("/alphas/{alpha_id}")
-def delete(alpha_id: int, db: Session = Depends(get_db)):
-    ok = delete_alpha(db, alpha_id)
-    if not ok:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alpha not found")
-    return {"deleted": True}
-
+    items = services.list_alpha_signals(
+        db,
+        asset_ids=asset_ids,
+        start_date=start_date,
+        end_date=end_date,
+        skip=skip,
+        limit=limit,
+    )
+    return AlphaSignalListResponse(items=items)
