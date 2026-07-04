@@ -27,3 +27,11 @@ __pycache__/
 
 dist/
 *.tsbuildinfo
+
+__pycache__/
+*.pyc
+*.pyo
+*.db
+.env
+.venv/
+.vscode/
