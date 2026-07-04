@@ -24,6 +24,12 @@ class Asset(TimestampMixin, Base):
         back_populates="asset",
         cascade="all, delete-orphan",
     )
+    
+    factor_exposures = relationship(
+        "FactorExposure",
+        back_populates="asset",
+        cascade="all, delete-orphan",
+    )
 
 
 class PriceBar(TimestampMixin, Base):
@@ -44,4 +50,3 @@ class PriceBar(TimestampMixin, Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     asset = relationship("Asset", back_populates="price_bars")
-

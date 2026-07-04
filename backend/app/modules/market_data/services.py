@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -9,6 +9,13 @@ from app.modules.market_data.schemas import AssetCreate, AssetUpdate, PriceBarCr
 def get_asset(db: Session, asset_id: int) -> Optional[Asset]:
     return db.query(Asset).filter(Asset.id == asset_id).first()
 
+def get_assets_by_symbols(db: Session, symbols: List[str]) -> List[Asset]:
+    """
+    Retrieves a list of Asset objects from the database for the given symbols.
+    """
+    if not symbols:
+        return []
+    return db.query(Asset).filter(Asset.symbol.in_(symbols)).all()
 
 def list_assets(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Asset).offset(skip).limit(limit).all()
@@ -132,4 +139,3 @@ def delete_price_bar(db: Session, price_bar_id: int) -> bool:
     db.delete(obj)
     db.commit()
     return True
-
