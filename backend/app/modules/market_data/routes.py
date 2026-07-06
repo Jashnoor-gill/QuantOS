@@ -29,6 +29,11 @@ from app.modules.market_data.services import (
     ingest_all_assets_service,
     get_historical_data_service,
 )
+from app.modules.market_data.schemas import IngestUniverseRequest, IngestUniverseResponse
+from app.modules.market_data.universe_ingestion_service import ingest_universe_service
+from app.modules.market_data.asset_search_service import search_assets_service
+
+
 
 router = APIRouter()
 
@@ -41,12 +46,30 @@ def ingest_data_route(symbol: str, db: Session = Depends(get_db)):
 def ingest_all_data_route(db: Session = Depends(get_db)):
     return ingest_all_assets_service(db)
 
+
+@router.post("/ingest-universe", response_model=IngestUniverseResponse)
+def ingest_universe_route(
+    payload: IngestUniverseRequest | None = None,
+    db: Session = Depends(get_db),
+):
+    return ingest_universe_service(db, request=payload)
+
+
+
+@router.get("/assets/search", response_model=AssetListResponse)
+def search_assets_route(q: str, limit: int = 10, db: Session = Depends(get_db)):
+    return search_assets_service(db, query=q, limit=limit)
+
+
+
+
 @router.get("/history/{symbol}", response_model=PriceBarListResponse)
 def get_history_route(symbol: str, db: Session = Depends(get_db)):
     items = get_historical_data_service(db, symbol)
     if items is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found")
     return PriceBarListResponse(items=items)
+
 
 
 # Asset CRUD

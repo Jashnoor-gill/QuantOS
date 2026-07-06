@@ -78,3 +78,21 @@ class PriceBarListResponse(BaseModel):
 
     items: list[PriceBarResponse]
 
+
+class IngestUniverseRequest(BaseModel):
+    symbols: Optional[list[str]] = None
+
+
+class IngestUniverseSymbolResult(BaseModel):
+    symbol: str
+    status: str  # "ingested" | "skipped" | "failed"
+    message: Optional[str] = None
+
+
+class IngestUniverseResponse(BaseModel):
+    success_count: int
+    failure_count: int
+    skipped_count: int
+    results: list[IngestUniverseSymbolResult]
+
+
