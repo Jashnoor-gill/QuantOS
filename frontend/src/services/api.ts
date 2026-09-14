@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-  // Backend routes do NOT include an /api prefix.
-  baseURL: '',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
 });
 
 
