@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area } from 'recharts';
+import { DemoPage } from '../components/DemoPage';
+import { useDemoMode } from '../demo/DemoProvider';
 
 type Metrics = {
   sharpe: number;
@@ -13,7 +15,7 @@ type Point = { label: string; value: number };
 type DrawdownPoint = { label: string; dd: number };
 
 // TODO: Replace editor + run logic with backend alpha evaluation once endpoints exist.
-export function AlphaLabPage() {
+function AlphaLabContent() {
   const [alphaText, setAlphaText] = useState(
     `# Example Alpha (mock)\n\nalpha = rank(close) - rank(open)\n# Replace with your DSL / expression\n`
   );
@@ -170,5 +172,10 @@ export function AlphaLabPage() {
       </section>
     </div>
   );
+}
+
+export function AlphaLabPage() {
+  const { enabled } = useDemoMode();
+  return enabled ? <AlphaLabContent /> : <DemoPage title="Alpha Lab" description="Build, run, and inspect quantitative signals." columns={['Workspace', 'Status']} rows={[]} liveText="Enable Demo mode to open the sample Alpha Lab workspace." />;
 }
 

@@ -14,6 +14,8 @@ import {
 } from 'recharts';
 
 import { api } from '../services/api';
+import { useDemoMode } from '../demo/DemoProvider';
+import { demoAnalytics } from '../demo/demoData';
 
 type KPI = {
   label: string;
@@ -47,6 +49,7 @@ const formatPct = (v: number, digits = 2) => `${(v * 100).toFixed(digits)}%`;
 const formatNum = (v: number, digits = 2) => v.toFixed(digits);
 
 export function AnalyticsPage() {
+  const { enabled } = useDemoMode();
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [performance, setPerformance] = useState<AnalyticsPerformance | null>(null);
   const [risk, setRisk] = useState<AnalyticsRisk | null>(null);
@@ -56,6 +59,12 @@ export function AnalyticsPage() {
     const run = async () => {
       setLoading(true);
       try {
+        if (enabled) {
+          setSummary(demoAnalytics.summary);
+          setPerformance(demoAnalytics.performance);
+          setRisk(demoAnalytics.risk);
+          return;
+        }
         // TODO: Choose real backtest_id/portfolio_id once UI supports selection.
         const backtestId = 1;
         const [s, p, r] = await Promise.all([
@@ -72,7 +81,7 @@ export function AnalyticsPage() {
       }
     };
     run();
-  }, []);
+  }, [enabled]);
 
   const kpis: KPI[] = useMemo(() => {
     const s = summary;

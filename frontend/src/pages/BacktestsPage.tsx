@@ -1,11 +1,10 @@
 import React from 'react';
+import { DemoPage } from '../components/DemoPage';
+import { demoBacktestRows } from '../demo/demoData';
+import { useDemoMode } from '../demo/DemoProvider';
 
 export function BacktestsPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">Backtests</h1>
-      <p className="mt-2 text-slate-300">Backtest history and details will appear here.</p>
-    </div>
-  );
+  const { enabled } = useDemoMode();
+  return <DemoPage title="Backtests" description="Historical runs, returns, and risk-adjusted results." columns={['Run', 'Strategy', 'Status', 'Return', 'Sharpe']} rows={enabled ? demoBacktestRows : []} liveText="Run a strategy to populate backtest history." />;
 }
 

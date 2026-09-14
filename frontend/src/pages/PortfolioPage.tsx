@@ -1,11 +1,10 @@
 import React from 'react';
+import { DemoPage } from '../components/DemoPage';
+import { demoPortfolioRows } from '../demo/demoData';
+import { useDemoMode } from '../demo/DemoProvider';
 
 export function PortfolioPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">Portfolio</h1>
-      <p className="mt-2 text-slate-300">Portfolio weights and metrics will appear here.</p>
-    </div>
-  );
+  const { enabled } = useDemoMode();
+  return <DemoPage title="Portfolio" description="Model portfolios, allocation snapshots, and performance." columns={['Portfolio', 'Holdings', 'Return', 'Sharpe']} rows={enabled ? demoPortfolioRows : []} liveText="Sign in and load a portfolio to populate this workspace." />;
 }
 

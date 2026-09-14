@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { DemoPage } from '../components/DemoPage';
+import { useDemoMode } from '../demo/DemoProvider';
 
 type ReportSummary = {
   id: string;
@@ -103,7 +105,7 @@ const mockDetailById: Record<string, ReportDetail> = {
   },
 };
 
-export function ReportsPage() {
+function ReportsContent() {
   const [selectedId, setSelectedId] = useState<string>(mockReports[0]?.id ?? '');
 
   const selected = useMemo(() => mockDetailById[selectedId], [selectedId]);
@@ -222,5 +224,10 @@ export function ReportsPage() {
       </section>
     </div>
   );
+}
+
+export function ReportsPage() {
+  const { enabled } = useDemoMode();
+  return enabled ? <ReportsContent /> : <DemoPage title="Reports" description="Browse research reports and export completed analysis." columns={['Report', 'Status']} rows={[]} liveText="Enable Demo mode or load reports from the backend." />;
 }
 

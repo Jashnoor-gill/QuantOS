@@ -1,11 +1,10 @@
 import React from 'react';
+import { DemoPage } from '../components/DemoPage';
+import { demoRiskRows } from '../demo/demoData';
+import { useDemoMode } from '../demo/DemoProvider';
 
 export function RiskPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">Risk</h1>
-      <p className="mt-2 text-slate-300">Risk metrics and reports will appear here.</p>
-    </div>
-  );
+  const { enabled } = useDemoMode();
+  return <DemoPage title="Risk" description="Portfolio risk limits and monitoring signals." columns={['Metric', 'Value', 'Assessment']} rows={enabled ? demoRiskRows : []} liveText="Load a portfolio to calculate live risk metrics." />;
 }
 

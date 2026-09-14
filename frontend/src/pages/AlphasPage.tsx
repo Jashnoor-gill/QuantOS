@@ -1,11 +1,10 @@
 import React from 'react';
+import { DemoPage } from '../components/DemoPage';
+import { demoAlphaRows } from '../demo/demoData';
+import { useDemoMode } from '../demo/DemoProvider';
 
 export function AlphasPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">Alphas</h1>
-      <p className="mt-2 text-slate-300">Alpha list and alpha editor will appear here.</p>
-    </div>
-  );
+  const { enabled } = useDemoMode();
+  return <DemoPage title="Alphas" description="Signals ranked by quality, status, and recent research date." columns={['Name', 'Status', 'Sharpe', 'Updated']} rows={enabled ? demoAlphaRows : []} liveText="Create or load alpha signals from the backend to populate this workspace." />;
 }
 

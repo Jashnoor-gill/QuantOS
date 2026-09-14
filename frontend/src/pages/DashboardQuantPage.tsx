@@ -17,6 +17,8 @@ import {
 } from '../services/dashboardApi';
 
 import type { Alpha, Backtest, FactorExposure, Portfolio, Strategy } from '../services/dashboardApi';
+import { useDemoMode } from '../demo/DemoProvider';
+import { demoAlphas, demoBacktests, demoFactorExposures, demoPortfolios, demoStrategies } from '../demo/demoData';
 
 function groupBy<T>(arr: T[], keyFn: (item: T) => string) {
   const m = new Map<string, number>();
@@ -29,31 +31,32 @@ function groupBy<T>(arr: T[], keyFn: (item: T) => string) {
 
 
 export function DashboardQuantPage() {
+  const { enabled } = useDemoMode();
   const factorExposuresQuery = useQuery<FactorExposure[], Error>(
-    ['factorExposures'],
-    fetchFactorExposures,
+    ['factorExposures', enabled],
+    () => enabled ? Promise.resolve(demoFactorExposures) : fetchFactorExposures(),
     { staleTime: 60_000 },
   );
 
-  const alphasQuery = useQuery<Alpha[], Error>(['alphas'], fetchAlphas, {
+  const alphasQuery = useQuery<Alpha[], Error>(['alphas', enabled], () => enabled ? Promise.resolve(demoAlphas) : fetchAlphas(), {
     staleTime: 60_000,
   });
 
   const strategiesQuery = useQuery<Strategy[], Error>(
-    ['strategies'],
-    fetchStrategies,
+    ['strategies', enabled],
+    () => enabled ? Promise.resolve(demoStrategies) : fetchStrategies(),
     { staleTime: 60_000 },
   );
 
   const backtestsQuery = useQuery<Backtest[], Error>(
-    ['backtests'],
-    fetchBacktests,
+    ['backtests', enabled],
+    () => enabled ? Promise.resolve(demoBacktests) : fetchBacktests(),
     { staleTime: 60_000 },
   );
 
   const portfoliosQuery = useQuery<Portfolio[], Error>(
-    ['portfolios'],
-    fetchPortfolios,
+    ['portfolios', enabled],
+    () => enabled ? Promise.resolve(demoPortfolios) : fetchPortfolios(),
     { staleTime: 60_000 },
   );
 

@@ -1,11 +1,10 @@
 import React from 'react';
+import { DemoPage } from '../components/DemoPage';
+import { demoMarketRows } from '../demo/demoData';
+import { useDemoMode } from '../demo/DemoProvider';
 
 export function MarketDataPage() {
-  return (
-    <div>
-      <h1 className="text-2xl font-semibold">Market Data</h1>
-      <p className="mt-2 text-slate-300">Market data ingestion and datasets will appear here.</p>
-    </div>
-  );
+  const { enabled } = useDemoMode();
+  return <DemoPage title="Market Data" description="Market data ingestion and datasets." columns={['Symbol', 'Company', 'Last price', 'Today', 'Primary signal']} rows={enabled ? demoMarketRows : []} liveText="Connect a market data source to populate this workspace." />;
 }
 
