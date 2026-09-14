@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { api } from './api';
 
 export type FactorExposure = {
@@ -49,10 +50,16 @@ export async function fetchBacktests(): Promise<Backtest[]> {
 }
 
 export async function fetchPortfolios(): Promise<Portfolio[]> {
-  const res = await api.get<ListResponse<Portfolio>>('portfolio-optimizer/portfolios', {
-
-    params: { limit: 10000 },
-  });
-  return res.data.items;
+  try {
+    const res = await api.get<ListResponse<Portfolio>>('portfolio-optimizer/portfolios', {
+      params: { limit: 10000 },
+    });
+    return res.data.items;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      return [];
+    }
+    throw error;
+  }
 }
 
